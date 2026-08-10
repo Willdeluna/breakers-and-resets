@@ -13,7 +13,6 @@
     color:#fff; overflow:hidden; touch-action:none;
     background:linear-gradient(160deg,#0f2027 0%,#203a43 48%,#2c5364 100%);
   }
-  /* faint vignette + top sheen for depth */
   #stage{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
     background:radial-gradient(120% 90% at 50% 12%,rgba(255,255,255,.10),rgba(255,255,255,0) 42%); }
 
@@ -37,9 +36,8 @@
     -webkit-backdrop-filter:blur(13px) saturate(1.55); backdrop-filter:blur(13px) saturate(1.55);
     transition:border-color .25s ease, box-shadow .25s ease;
   }
-  .node .glyph{ font-size:26px; line-height:1; margin-bottom:2px; filter:drop-shadow(0 2px 4px rgba(0,0,0,.4)); }
-  .node .t{ font-weight:800; font-size:19px; letter-spacing:.02em; text-shadow:0 1px 3px rgba(0,0,0,.55); }
-  .node .s{ font-weight:600; font-size:11px; letter-spacing:.06em; opacity:.9; text-transform:uppercase; text-shadow:0 1px 2px rgba(0,0,0,.5); }
+  .node .glyph{ font-size:24px; line-height:1; margin-bottom:2px; filter:drop-shadow(0 2px 4px rgba(0,0,0,.4)); }
+  .node .t{ font-weight:800; font-size:16px; letter-spacing:.02em; text-shadow:0 1px 3px rgba(0,0,0,.55); }
   .node.top{
     border-color:rgba(79,214,255,.85);
     box-shadow:0 14px 34px rgba(0,0,0,.45), 0 0 26px 3px rgba(79,214,255,.5),
@@ -63,7 +61,7 @@
   #center .s{ font-weight:600; font-size:12px; letter-spacing:.07em; opacity:.85; text-transform:uppercase; text-shadow:0 1px 2px rgba(0,0,0,.5); }
   @keyframes pop{ from{ transform:scale(.82); opacity:.15; } to{ transform:scale(1); opacity:1; } }
 
-  /* placeholder modal */
+  /* placeholder modal (for buttons without a link yet) */
   #modal{ position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center;
     background:rgba(6,14,20,.55); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); }
   #modal.on{ display:flex; }
@@ -99,7 +97,6 @@
 <script>
 (function(){
   const TAU = Math.PI*2, TOP = -Math.PI/2;                 // top slot at -90°
-  const SIG = 0.42;                                        // how tightly a button snaps into the centre (radians)
   const ITEMS = [
     { t:'B717', s:'Circuit Breakers', g:'✈', url:'https://willdeluna.github.io/717CB/' },
     { t:'B737', s:'Circuit Breakers', g:'✈', url:'https://willdeluna.github.io/737CB/' },
@@ -107,6 +104,7 @@
     { t:'A320', s:'Circuit Breakers', g:'🛩', url:'https://willdeluna.github.io/320CB/' },
     { t:'Common', s:'Resets', g:'↻', url:'https://willdeluna.github.io/CommonResets/' },
     { t:'Useful', s:'Refs', g:'📘', url:'https://willdeluna.github.io/UsefulRefs/' },
+    { t:'ATA', s:'Finder', g:'🔎', url:'https://willdeluna.github.io/ATA/' },
     { t:'Locations', s:'', g:'📍' },
   ];
   const N = ITEMS.length, STEP = TAU/N;                    // evenly space however many buttons there are
@@ -197,8 +195,7 @@
   function up(){
     if(!dragging) return;
     dragging = false;
-    if(!dragged){ target = snap(rot); }        // a tap → settle to nearest slot (node click handles the pick)
-    // if dragged, momentum in frame() carries it, then snaps
+    if(!dragged){ target = snap(rot); }        // a tap → settle to nearest slot (click handlers do the pick)
   }
 
   const stage = document.getElementById('stage');
@@ -210,14 +207,13 @@
   // ---- selecting a button ----
   function onPick(i){
     if(i === topIndex()){ openModal(i); return; }
-    // bring node i to the top: rot such that TOP + i*STEP + rot = TOP  →  rot = -i*STEP (mod TAU), nearest to current
-    let tr = -i*STEP;
+    let tr = -i*STEP;                          // rot that brings node i to the top/centre
     while(tr - rot >  Math.PI) tr -= TAU;
     while(tr - rot < -Math.PI) tr += TAU;
     vel = 0; target = tr;
   }
 
-  // ---- placeholder modal ----
+  // ---- open: linked buttons navigate, others show placeholder ----
   const modal = document.getElementById('modal');
   function openModal(i){
     const it = ITEMS[i];
