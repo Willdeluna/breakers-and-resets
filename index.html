@@ -5,85 +5,174 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>CB Wheel</title>
 <style>
-  :root{ --accent:#4fd6ff; }
+  :root{ --accent:#4fd6ff; --nz:150px; --cz:220px; }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body{ height:100%; margin:0; }
   body{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",system-ui,sans-serif;
     color:#fff; overflow:hidden; touch-action:none;
-    background:linear-gradient(160deg,#0f2027 0%,#203a43 48%,#2c5364 100%);
+    background:#14112b;
   }
-  #stage{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
-    background:radial-gradient(120% 90% at 50% 12%,rgba(255,255,255,.10),rgba(255,255,255,0) 42%); }
+  /* blue → cyan → green diagonal field behind the glass */
+  #stage{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; overflow:hidden; background:#071e5e; }
+  #stage::before{
+    content:""; position:absolute; inset:-20%; pointer-events:none; filter:blur(40px);
+    background:
+      radial-gradient(38% 30% at 82% 22%,rgba(70,160,80,.55) 0%,rgba(50,140,80,.3) 35%,rgba(40,120,80,0) 72%),
+      radial-gradient(60% 45% at 50% 44%,rgba(10,130,150,.55) 0%,rgba(10,115,135,.28) 45%,rgba(10,100,120,0) 78%),
+      linear-gradient(28deg,#061a5c 0%,#082a7e 18%,#0a4590 38%,#0c7690 55%,#0e8a72 70%,#178f55 85%,#2c9a48 100%);
+  }
+  /* slow drift: the cyan band and green glow breathe */
+  .blob{ position:absolute; border-radius:50%; pointer-events:none; filter:blur(50px); mix-blend-mode:screen; opacity:.45;
+    animation:drift 30s cubic-bezier(.45,0,.55,1) infinite alternate; }
+  .b1{ width:70vmax; height:50vmax; left:10%; top:25%;
+    background:radial-gradient(ellipse at 50% 50%,#0f8ea0 0%,#0c7a92 30%,rgba(12,122,146,.3) 60%,rgba(12,122,146,0) 80%); }
+  .b2{ width:56vmax; height:56vmax; right:-16vmax; top:-18vmax; animation-delay:-15s;
+    background:radial-gradient(circle,#4fa85a 0%,#348f5a 28%,rgba(40,130,85,.3) 58%,rgba(40,130,85,0) 80%); }
+  .b3{ width:60vmax; height:60vmax; left:-22vmax; bottom:-24vmax; animation-delay:-8s; animation-duration:22s; opacity:.4;
+    background:radial-gradient(circle,#1f4fd0 0%,#173fb6 34%,rgba(23,63,182,.3) 62%,rgba(23,63,182,0) 82%); }
+  @keyframes drift{
+    from{ transform:translate(0,0) scale(1); }
+    to{ transform:translate(8vmax,6vmax) scale(1.12); }
+  }
+  @media (prefers-reduced-motion:reduce){ .blob{ animation:none; } }
 
   #title{ position:fixed; top:calc(env(safe-area-inset-top,0px) + 22px); left:0; right:0; text-align:center;
-    font-weight:700; letter-spacing:.14em; font-size:13px; text-transform:uppercase;
+    font-weight:600; letter-spacing:.01em; font-size:15px;
     color:rgba(255,255,255,.62); pointer-events:none; }
   #hint{ position:fixed; bottom:calc(env(safe-area-inset-bottom,0px) + 20px); left:0; right:0; text-align:center;
-    font-size:12px; letter-spacing:.05em; color:rgba(255,255,255,.42); pointer-events:none;
+    font-size:13px; color:rgba(255,255,255,.42); pointer-events:none;
     transition:opacity .5s ease; }
 
-  #wheel{ position:relative; width:1px; height:1px; }
+  #wheel{ position:relative; z-index:1; width:1px; height:1px; }
 
-  .node{
+  /* ---------- Liquid Glass ----------
+     Clear glass rather than frosted: almost no fill, a heavy backdrop blur,
+     a thin refractive rim (bright where light enters top-left and exits bottom-right),
+     a soft specular highlight along the top edge, and a faint glow along the bottom. */
+  .node, #center{
     position:absolute; left:50%; top:50%;
-    width:var(--nz,150px); height:var(--nz,150px); border-radius:50%;
-    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
-    padding:6px; text-align:center; cursor:pointer; user-select:none; will-change:transform;
-    border:1px solid rgba(255,255,255,.42);
-    background:radial-gradient(135% 135% at 30% 22%,rgba(255,255,255,.38),rgba(255,255,255,.10) 44%,rgba(255,255,255,.03) 70%);
-    box-shadow:0 12px 34px rgba(0,0,0,.42), inset 0 2px 3px rgba(255,255,255,.65), inset 0 -14px 26px rgba(255,255,255,.05);
-    -webkit-backdrop-filter:blur(13px) saturate(1.55); backdrop-filter:blur(13px) saturate(1.55);
-    transition:border-color .25s ease, box-shadow .25s ease;
+    border-radius:50%;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; cursor:pointer; user-select:none;
+    color:#fff;
+    background:rgba(6,16,30,.26);
+    -webkit-backdrop-filter:blur(22px) saturate(2.4) brightness(.74) contrast(1.15);
+    backdrop-filter:blur(22px) saturate(2.4) brightness(.74) contrast(1.15);
+    box-shadow:
+      0 12px 32px rgba(0,0,0,.34),
+      0 1px 2px rgba(0,0,0,.22),
+      inset 0 1.5px 1px rgba(255,255,255,.62),
+      inset 0 -2px 2px rgba(255,255,255,.40),
+      inset 0 0 0 .5px rgba(255,255,255,.14),
+      inset 0 -16px 28px rgba(0,0,0,.22),
+      inset 0 14px 22px rgba(255,255,255,.06),
+      inset 3px 3px 5px rgba(200,255,240,.34),
+      inset -3px -3px 5px rgba(120,170,255,.38),
+      inset 0 0 18px 6px rgba(255,255,255,.05);
+    transition:box-shadow .25s ease, background .18s ease;
   }
-  .node .glyph{ font-size:24px; line-height:1; margin-bottom:2px; filter:drop-shadow(0 2px 4px rgba(0,0,0,.4)); }
-  .node .t{ font-weight:800; font-size:16px; letter-spacing:.02em; text-shadow:0 1px 3px rgba(0,0,0,.55); }
+  /* refractive rim */
+  .node::before, #center::before{
+    content:""; position:absolute; inset:0; border-radius:inherit; padding:2px; pointer-events:none;
+    background:conic-gradient(from 0deg,
+      rgba(255,255,255,.55) 0deg,
+      rgba(255,255,255,.14) 75deg,
+      rgba(255,255,255,.92) 135deg,
+      rgba(255,255,255,.14) 200deg,
+      rgba(255,255,255,.18) 265deg,
+      rgba(255,255,255,1) 318deg,
+      rgba(255,255,255,.55) 360deg);
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude;
+  }
+  /* specular highlight (top) + faint caustic (bottom) */
+  .node::after, #center::after{
+    content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+    background:
+      radial-gradient(22% 14% at 30% 14%,rgba(255,255,255,.55),rgba(255,255,255,0) 100%),
+      radial-gradient(72% 34% at 50% -2%,rgba(255,255,255,.34),rgba(255,255,255,0) 100%),
+      radial-gradient(circle at 50% 50%,rgba(255,255,255,0) 66%,rgba(255,255,255,.13) 73%,rgba(255,255,255,0) 84%),
+      radial-gradient(60% 26% at 50% 104%,rgba(255,255,255,.18),rgba(255,255,255,0) 100%);
+  }
+  .node > *, #center > *{ position:relative; z-index:1; }
+
+  .node{ width:var(--nz); height:var(--nz); gap:2px; padding:6px; will-change:transform; }
+  .node .glyph{ font-size:24px; line-height:1; margin-bottom:2px; filter:drop-shadow(0 1px 2px rgba(0,0,0,.35)); }
+  .node .t{ font-weight:600; font-size:16px; letter-spacing:-.01em; text-shadow:0 1px 2px rgba(0,0,0,.35); }
+  .node:active, #center:active{ background:rgba(6,16,30,.18); }
+
+  /* selected (top) node: the rim picks up the accent and the glass tints slightly */
   .node.top{
-    border-color:rgba(79,214,255,.85);
-    box-shadow:0 14px 34px rgba(0,0,0,.45), 0 0 26px 3px rgba(79,214,255,.5),
-               inset 0 2px 4px rgba(255,255,255,.75), inset 0 -12px 22px rgba(79,214,255,.10);
+    background:rgba(10,40,60,.40);
+    box-shadow:
+      0 12px 32px rgba(0,0,0,.34),
+      0 0 0 1px rgba(79,214,255,.45),
+      0 0 26px 4px rgba(79,214,255,.30),
+      inset 0 1px 1px rgba(255,255,255,.60),
+      inset 0 -1px 1px rgba(255,255,255,.30),
+      inset 0 -12px 24px rgba(0,0,0,.18);
   }
 
   /* the enlarged fixed disc in the middle — its TEXT changes as you spin (buttons don't resize) */
   #center{
-    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-    width:var(--cz,220px); height:var(--cz,220px); border-radius:50%; z-index:200;
-    display:flex; align-items:center; justify-content:center; text-align:center; cursor:pointer;
-    border:1px solid rgba(79,214,255,.8);
-    background:radial-gradient(135% 135% at 30% 20%,rgba(255,255,255,.42),rgba(255,255,255,.12) 44%,rgba(79,214,255,.10) 72%);
-    box-shadow:0 22px 54px rgba(0,0,0,.5), 0 0 40px 6px rgba(79,214,255,.4),
-               inset 0 3px 5px rgba(255,255,255,.8), inset 0 -16px 30px rgba(79,214,255,.12);
-    -webkit-backdrop-filter:blur(16px) saturate(1.6); backdrop-filter:blur(16px) saturate(1.6);
+    transform:translate(-50%,-50%);
+    width:var(--cz); height:var(--cz); z-index:200;
+    background:rgba(8,30,48,.42);
+    box-shadow:
+      0 24px 56px rgba(0,0,0,.42),
+      0 0 0 1px rgba(79,214,255,.40),
+      0 0 40px 6px rgba(79,214,255,.26),
+      inset 0 1.5px 1px rgba(255,255,255,.65),
+      inset 0 -1.5px 1px rgba(255,255,255,.32),
+      inset 0 -18px 34px rgba(0,0,0,.22);
   }
   #center .cinner{ display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px; }
-  #center .glyph{ font-size:42px; line-height:1; filter:drop-shadow(0 2px 5px rgba(0,0,0,.4)); }
-  #center .t{ font-weight:800; font-size:24px; letter-spacing:.02em; text-shadow:0 2px 4px rgba(0,0,0,.5); }
-  #center .s{ font-weight:600; font-size:12px; letter-spacing:.07em; opacity:.85; text-transform:uppercase; text-shadow:0 1px 2px rgba(0,0,0,.5); }
+  #center .glyph{ font-size:42px; line-height:1; filter:drop-shadow(0 2px 4px rgba(0,0,0,.35)); }
+  #center .t{ font-weight:700; font-size:24px; letter-spacing:-.01em; text-shadow:0 1px 3px rgba(0,0,0,.4); }
+  #center .s{ font-weight:500; font-size:13px; opacity:.8; text-shadow:0 1px 2px rgba(0,0,0,.4); }
   @keyframes pop{ from{ transform:scale(.82); opacity:.15; } to{ transform:scale(1); opacity:1; } }
+  @media (prefers-reduced-motion:reduce){ #center .cinner{ animation:none !important; } }
 
   /* placeholder modal (for buttons without a link yet) */
   #modal{ position:fixed; inset:0; z-index:50; display:none; align-items:center; justify-content:center;
-    background:rgba(6,14,20,.55); -webkit-backdrop-filter:blur(4px); backdrop-filter:blur(4px); }
+    background:rgba(6,14,20,.45); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); }
   #modal.on{ display:flex; }
-  #modal .card{ width:min(420px,86vw); border-radius:22px; padding:26px 24px 22px; text-align:center;
-    border:1px solid rgba(255,255,255,.34);
-    background:radial-gradient(130% 130% at 30% 12%,rgba(255,255,255,.20),rgba(255,255,255,.05) 55%,rgba(20,32,42,.35));
-    box-shadow:0 24px 60px rgba(0,0,0,.55), inset 0 2px 3px rgba(255,255,255,.4);
-    -webkit-backdrop-filter:blur(20px) saturate(1.5); backdrop-filter:blur(20px) saturate(1.5); }
+  #modal .card{ position:relative; width:min(420px,86vw); border-radius:28px; padding:26px 24px 22px; text-align:center;
+    background:rgba(6,16,30,.40);
+    box-shadow:0 24px 60px rgba(0,0,0,.5),
+      inset 0 1px 1px rgba(255,255,255,.5), inset 0 -1px 1px rgba(255,255,255,.22), inset 0 0 0 .5px rgba(255,255,255,.14);
+    -webkit-backdrop-filter:blur(24px) saturate(1.7) brightness(.75); backdrop-filter:blur(24px) saturate(1.7) brightness(.75); }
+  #modal .card::before{
+    content:""; position:absolute; inset:0; border-radius:inherit; padding:1.5px; pointer-events:none;
+    background:linear-gradient(135deg,rgba(255,255,255,.85),rgba(255,255,255,.12) 40%,rgba(255,255,255,.08) 60%,rgba(255,255,255,.6));
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude;
+  }
   #modal .glyphBig{ font-size:44px; margin-bottom:6px; }
-  #modal h2{ margin:0 0 4px; font-size:22px; letter-spacing:.02em; }
-  #modal .sub{ margin:0 0 18px; color:rgba(255,255,255,.65); font-size:13px; letter-spacing:.05em; text-transform:uppercase; }
+  #modal h2{ margin:0 0 4px; font-size:22px; letter-spacing:-.01em; }
+  #modal .sub{ margin:0 0 18px; color:rgba(255,255,255,.65); font-size:14px; }
   #modal p{ margin:0 0 22px; color:rgba(255,255,255,.78); font-size:14px; }
-  #modal button{ border:1px solid rgba(255,255,255,.4); border-radius:14px; padding:11px 26px; font-weight:700; font-size:14px;
-    color:#fff; cursor:pointer;
-    background:radial-gradient(130% 130% at 30% 22%,rgba(79,214,255,.42),rgba(79,214,255,.12) 60%);
-    box-shadow:0 8px 22px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.5); }
-  #modal button:active{ transform:translateY(1px); }
+  /* pill glass button, same recipe as the wheel nodes */
+  #modal button{ position:relative; border:0; border-radius:999px; padding:12px 28px; font-weight:600; font-size:15px;
+    font-family:inherit; color:#fff; cursor:pointer;
+    background:rgba(8,30,48,.45);
+    box-shadow:0 8px 22px rgba(0,0,0,.3), 0 0 0 1px rgba(79,214,255,.35),
+      inset 0 1px 1px rgba(255,255,255,.55), inset 0 -1px 1px rgba(255,255,255,.25);
+    -webkit-backdrop-filter:blur(16px) saturate(1.6); backdrop-filter:blur(16px) saturate(1.6);
+    transition:background .18s ease; }
+  #modal button::before{
+    content:""; position:absolute; inset:0; border-radius:inherit; padding:1.5px; pointer-events:none;
+    background:linear-gradient(135deg,rgba(255,255,255,.9),rgba(255,255,255,.1) 45%,rgba(255,255,255,.7));
+    -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor; mask-composite:exclude;
+  }
+  #modal button:active{ background:rgba(8,30,48,.25); }
 </style>
 </head>
 <body>
   <div id="title">Circuit Breaker Reference</div>
-  <div id="stage"><div id="wheel"><div id="center"><div class="cinner" id="cinner"></div></div></div></div>
+  <div id="stage"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div id="wheel"><div id="center"><div class="cinner" id="cinner"></div></div></div></div>
   <div id="hint">Drag to spin • the middle button is selected — tap it to open</div>
 
   <div id="modal"><div class="card">
